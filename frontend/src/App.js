@@ -1,74 +1,29 @@
-import React, { useEffect, useState } from "react";
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Navbar from "./components/Navbar";
+import Events from "./pages/Events";
+import MyProfile from "./pages/MyProfile";
+import Dashboard from "./pages/Dashboard";
+import Skills from "./pages/Skills";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import Home from "./pages/Home";
 
 function App() {
-  const [message, setMessage] = useState("Loading...");
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [token, setToken] = useState(localStorage.getItem("token") || "");
-
-  useEffect(() => {
-    if (token) {
-      fetch("http://127.0.0.1:8000/api/", {
-        headers: {
-          "Authorization": `Bearer ${token}`,
-        },
-      })
-        .then((res) => res.json())
-        .then((data) => setMessage(data.message || "Authenticated!"))
-        .catch(() => setMessage("Error fetching data"));
-    }
-  }, [token]);
-
-  const handleLogin = async () => {
-    const response = await fetch("http://127.0.0.1:8000/api/token/", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ username, password }),
-    });
-
-    const data = await response.json();
-    if (data.access) {
-      localStorage.setItem("token", data.access);
-      setToken(data.access);
-      setMessage("Login successful! Fetching data...");
-    } else {
-      setMessage("Login failed. Check credentials.");
-    }
-  };
-
   return (
-    <div style={{ textAlign: "center", marginTop: "50px" }}>
-      <h1>Frontend Connected to Django Backend</h1>
-      {token ? (
-        <>
-          <p>Message from Backend: {message}</p>
-          <button onClick={() => {
-            localStorage.removeItem("token");
-            setToken("");
-            setMessage("Logged out");
-          }}>Logout</button>
-        </>
-      ) : (
-        <>
-          <input
-            type="text"
-            placeholder="Username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-          />
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-          <button onClick={handleLogin}>Login</button>
-          <p>{message}</p>
-        </>
-      )}
-    </div>
+    <Router>
+      <div>
+        <Navbar />
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/events" element={<Events />} />
+          <Route path="/skills" element={<Skills />} />
+          <Route path="/profile/:id" element={<MyProfile />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+        </Routes>
+      </div>
+    </Router>
   );
 }
 

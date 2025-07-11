@@ -1,7 +1,17 @@
+
 from django.urls import path
-from .views import UserListCreateView, UserDetailView
+from .views import RegisterView, UserProfileView, DashboardView, SkillMatchView
 
 urlpatterns = [
-    path('', UserListCreateView.as_view(), name='user-list'),
-    path('<int:pk>/', UserDetailView.as_view(), name='user-detail'),
+    # GET or PATCH /api/users/<id>/
+    path('users/<int:id>/', UserProfileView.as_view(), name='user-profile'),
+
+    # POST /api/register/
+    path('register/', RegisterView.as_view(), name='register'),
+
+    # GET /api/users/skill-match/?skill=...
+    path('users/skill-match/', SkillMatchView.as_view(), name='skill-match'),
+
+    # GET /api/dashboard/
+    path('dashboard/', DashboardView.as_view(), name='dashboard'),
 ]
