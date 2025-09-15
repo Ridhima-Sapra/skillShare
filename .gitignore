@@ -25,6 +25,9 @@ dist/
 build/
 *.log
 .env
+backend/backend/settings_backup.py
+
+
 # Virtual environments
 venv/
 backend/venv/
