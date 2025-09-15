@@ -1,7 +1,8 @@
 from rest_framework import serializers
-from .models import CustomUser  # Use your actual custom user model
+from .models import CustomUser  
 from skills.models import UserSkill, Skill
 from events.models import Event
+
 
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
@@ -35,14 +36,34 @@ class EventBriefSerializer(serializers.ModelSerializer):
         fields = ['id', 'title', 'date']
 
 class UserProfileSerializer(serializers.ModelSerializer):
+    photo = serializers.SerializerMethodField()
     skills = serializers.SerializerMethodField()
     events_attending = EventBriefSerializer(many=True)
     events_hosted = EventBriefSerializer(many=True, source='hosted_events')
 
     class Meta:
         model = CustomUser
-        fields = ['id', 'username', 'email', 'bio', 'skills', 'events_attending', 'events_hosted']
+        fields = ['id', 'username', 'email', 'bio', 'photo','skills', 'events_attending', 'events_hosted']
+
+    def get_photo(self, obj):
+        request = self.context.get('request')
+        if obj.photo and hasattr(obj.photo, 'url'):
+            try:
+                if request:
+                    return request.build_absolute_uri(obj.photo.url)
+                else:
+                    return obj.photo.url
+            except Exception as e:
+                return None
+        return None
 
     def get_skills(self, user):
         user_skills = UserSkill.objects.filter(user=user)
         return UserSkillBriefSerializer(user_skills, many=True).data
+
+
+
+
+
+
+   

@@ -59,3 +59,12 @@ class UserAssignedSkillsView(generics.ListAPIView):
             queryset = queryset.filter(proficiency__iexact=proficiency)
 
         return queryset
+
+class UpdateUserSkillProficiencyView(generics.UpdateAPIView):
+    queryset = UserSkill.objects.all()
+    serializer_class = UserSkillSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        # Only allow the logged-in user to update their own skills
+        return UserSkill.objects.filter(user=self.request.user)    

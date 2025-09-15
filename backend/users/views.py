@@ -1,39 +1,41 @@
-from rest_framework import generics,permissions
+from rest_framework import generics, permissions, status
 from django.contrib.auth import get_user_model
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import PermissionDenied
 from users.models import CustomUser
-from skills.models import UserSkill,Skill
+from skills.models import UserSkill
 from skills.serializers import UserSkillSerializer
 from events.models import Event
-from django.db.models import Count
 from django.db import models
-from rest_framework.generics import ListAPIView
-from rest_framework.permissions import AllowAny
-from rest_framework.response import Response
-from rest_framework import status
-from django.contrib.auth.hashers import make_password
-from .serializers import RegisterSerializer  # Create this if not already there
-from .serializers import UserProfileSerializer
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from .serializers import RegisterSerializer, UserProfileSerializer
+from django.http import JsonResponse
+from events.models import GoogleCredentials
 
 User = get_user_model()
 
+
+# -------------------------
+# User Registration
+# -------------------------
 class RegisterView(generics.CreateAPIView):
     queryset = CustomUser.objects.all()
     serializer_class = RegisterSerializer
     permission_classes = [AllowAny]
 
     def create(self, request, *args, **kwargs):
-        data = request.data
-        data['password'] = make_password(data['password'])  # Hash the password
-        serializer = self.get_serializer(data=data)
+        serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response({'success': True, 'user': serializer.data}, status=status.HTTP_201_CREATED)
         return Response({'success': False, 'errors': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
+
+# -------------------------
+# User Profile
+# -------------------------
 class UserProfileView(generics.RetrieveUpdateAPIView):
     queryset = CustomUser.objects.all()
     serializer_class = UserProfileSerializer
@@ -45,14 +47,34 @@ class UserProfileView(generics.RetrieveUpdateAPIView):
         if request.user != user_obj:
             raise PermissionDenied("You can only update your own profile.")
         return super().update(request, *args, **kwargs)
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.update({"request": self.request})
+        return context
+
+
+# -------------------------
+# Update User Skill
+# -------------------------
 class UpdateUserSkillProficiencyView(generics.UpdateAPIView):
     queryset = UserSkill.objects.all()
     serializer_class = UserSkillSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        # Restrict update to only the skills owned by the logged-in user
         return UserSkill.objects.filter(user=self.request.user)
+
+
+class UserDetailView(generics.RetrieveAPIView):
+    queryset = CustomUser.objects.all()
+    serializer_class = UserProfileSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    lookup_field = 'pk' 
+
+# -------------------------
+# Dashboard
+# -------------------------
 class DashboardView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -60,7 +82,6 @@ class DashboardView(APIView):
         total_users = User.objects.count()
         total_events = Event.objects.count()
 
-        # Top 5 most assigned skills
         top_skills_qs = (
             UserSkill.objects.values('skill__name')
             .annotate(count=models.Count('skill'))
@@ -68,7 +89,6 @@ class DashboardView(APIView):
         )
         top_skills = [{'name': s['skill__name'], 'count': s['count']} for s in top_skills_qs]
 
-        # Most active users (by skill + event count)
         users = User.objects.all()
         most_active = []
         for u in users:
@@ -81,7 +101,6 @@ class DashboardView(APIView):
                     'events': event_count,
                 })
 
-        # Sort descending by activity (total)
         most_active.sort(key=lambda x: (x['skills'] + x['events']), reverse=True)
         most_active = most_active[:5]
 
@@ -91,7 +110,12 @@ class DashboardView(APIView):
             'top_skills': top_skills,
             'most_active_users': most_active,
         })
-class SkillMatchView(ListAPIView):
+
+
+# -------------------------
+# Skill Match
+# -------------------------
+class SkillMatchView(generics.ListAPIView):
     serializer_class = UserProfileSerializer
     permission_classes = [IsAuthenticated]
 
@@ -99,14 +123,5 @@ class SkillMatchView(ListAPIView):
         skill_name = self.request.query_params.get('skill')
         if not skill_name:
             return User.objects.none()
-        
-        return User.objects.filter(
-            userskill__skill__name__iexact=skill_name
-        ).distinct()    
-class UserDetailView(generics.RetrieveAPIView):
-    queryset = CustomUser.objects.all()
-    serializer_class = UserProfileSerializer
-    permission_classes = [permissions.IsAuthenticated]
-    lookup_field = 'pk'    
-    
-    
+        return User.objects.filter(userskill__skill__name__iexact=skill_name).distinct()
+

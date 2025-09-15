@@ -18,7 +18,7 @@ from django.db import models
 from django.conf import settings
 
 class Skill(models.Model):
-    name = models.CharField(max_length=100, unique=True)
+    name = models.CharField(max_length=100)
     description = models.TextField()
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="created_skills")
 

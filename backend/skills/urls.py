@@ -1,7 +1,10 @@
 from django.urls import path
 from .views import AssignSkillView, SkillListCreateView, SkillDetailView, UserAssignedSkillsView
 from users.views import UpdateUserSkillProficiencyView
-
+from .views import (
+    AssignSkillView, SkillListCreateView, SkillDetailView, 
+    UserAssignedSkillsView, UpdateUserSkillProficiencyView  # ✅ import from skills.views now
+)
 urlpatterns = [
     path('', SkillListCreateView.as_view(), name='skill-list'),
     path('<int:pk>/', SkillDetailView.as_view(), name='skill-detail'),
