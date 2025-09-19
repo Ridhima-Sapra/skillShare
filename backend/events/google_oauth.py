@@ -26,10 +26,10 @@ def exchange_code_for_tokens(code):
         "redirect_uri": settings.GOOGLE_REDIRECT_URI,
         'grant_type': 'authorization_code'
     }
-    print("Sending to Google:", data)
+    # print("Sending to Google:", data)
 
     resp = requests.post('https://oauth2.googleapis.com/token', data=data)
-    print("Google token response:", resp.status_code, resp.text)  # 👀 add this
+    # print("Google token response:", resp.status_code, resp.text)  
 
     resp.raise_for_status()
     return resp.json()  # contains access_token, refresh_token, expires_in

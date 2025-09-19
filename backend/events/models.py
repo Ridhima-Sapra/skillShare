@@ -10,7 +10,7 @@ User = get_user_model()
 
 
 class GoogleCredentials(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="google_credentials")
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="google_credentials")                  # Links each user to their Google OAuth tokens.
     access_token = models.TextField()
     refresh_token = models.TextField(blank=True, null=True)
     token_uri = models.TextField(default="https://oauth2.googleapis.com/token")

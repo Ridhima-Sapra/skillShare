@@ -23,6 +23,7 @@ signer = Signer()
 from .models import GoogleCredentials
 from urllib.parse import quote
 # Google OAuth Start
+# The frontend opens this URL go to Google login screen then user grants permissions
 
 
 @api_view(['GET'])
@@ -36,20 +37,19 @@ def google_oauth_start(request):
 
     auth_url = (
         "https://accounts.google.com/o/oauth2/v2/auth"
-         f"?client_id={quote(client_id)}"
+         f"?client_id={quote(str(client_id))}"
         f"&response_type=code"
-        f"&redirect_uri={quote(redirect_uri)}"
-        f"&scope={quote(scope)}"
+        f"&redirect_uri={quote(str(redirect_uri))}"
+        f"&scope={quote(str(scope))}"
         f"&access_type=offline"
         f"&prompt=consent"
-        f"&state={quote(state)}"
+        f"&state={quote(str(state))}"
     )
     return Response({'auth_url': auth_url})
 
 
-# -------------------------
 # Google OAuth Callback
-# -------------------------
+
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def google_oauth_callback(request):
@@ -152,7 +152,7 @@ def create_event_with_google_meet(request):
         if resp.status_code == 401:
             refreshed, msg = refresh_google_token(creds)
             if refreshed:
-                access_token = creds.access_token   # ✅ fixed
+                access_token = creds.access_token 
                 resp = requests.post(
                     'https://www.googleapis.com/calendar/v3/calendars/primary/events?conferenceDataVersion=1',
                     headers={

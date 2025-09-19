@@ -17,9 +17,9 @@ from events.models import GoogleCredentials
 User = get_user_model()
 
 
-# -------------------------
+
 # User Registration
-# -------------------------
+
 class RegisterView(generics.CreateAPIView):
     queryset = CustomUser.objects.all()
     serializer_class = RegisterSerializer
@@ -33,9 +33,8 @@ class RegisterView(generics.CreateAPIView):
         return Response({'success': False, 'errors': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
 
-# -------------------------
 # User Profile
-# -------------------------
+
 class UserProfileView(generics.RetrieveUpdateAPIView):
     queryset = CustomUser.objects.all()
     serializer_class = UserProfileSerializer
@@ -53,10 +52,8 @@ class UserProfileView(generics.RetrieveUpdateAPIView):
         context.update({"request": self.request})
         return context
 
-
-# -------------------------
 # Update User Skill
-# -------------------------
+
 class UpdateUserSkillProficiencyView(generics.UpdateAPIView):
     queryset = UserSkill.objects.all()
     serializer_class = UserSkillSerializer
@@ -65,16 +62,15 @@ class UpdateUserSkillProficiencyView(generics.UpdateAPIView):
     def get_queryset(self):
         return UserSkill.objects.filter(user=self.request.user)
 
-
+#for viewable profile only
 class UserDetailView(generics.RetrieveAPIView):
     queryset = CustomUser.objects.all()
     serializer_class = UserProfileSerializer
     permission_classes = [permissions.IsAuthenticated]
     lookup_field = 'pk' 
 
-# -------------------------
 # Dashboard
-# -------------------------
+
 class DashboardView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -112,9 +108,7 @@ class DashboardView(APIView):
         })
 
 
-# -------------------------
 # Skill Match
-# -------------------------
 class SkillMatchView(generics.ListAPIView):
     serializer_class = UserProfileSerializer
     permission_classes = [IsAuthenticated]

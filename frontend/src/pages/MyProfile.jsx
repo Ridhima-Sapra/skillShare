@@ -46,6 +46,11 @@ function MyProfile() {
       });
 
       alert("Profile updated successfully");
+      // force photo refresh by busting cache
+setUser((prev) => ({
+  ...prev,
+  photo: `${prev.photo}?t=${new Date().getTime()}`
+}));
       setEditMode(false);
       const res = await axios.get(`/users/${id}/`);
       setUser(res.data);
@@ -61,18 +66,16 @@ function MyProfile() {
     <div className="max-w-xl mx-auto p-4">
       <h2 className="text-2xl font-bold mb-4">My Profile</h2>
 
-      {/* {user.photo && (
-        <img
-          src={`http://127.0.0.1:8000${user.photo}`}
-          alt="Profile"
-          className="w-32 h-32 rounded-full object-cover mb-4 mx-auto"
-        />
-      )} */}
 
 
-      {user.photo && (
-  <img src={user.photo || ''} alt="Profile" className="w-32 h-32 rounded-full object-cover mb-4 mx-auto" />
+   {user.photo && (
+  <img
+    src={`${user.photo}?t=${new Date().getTime()}`}
+    alt="Profile"
+    className="w-32 h-32 rounded-full object-cover mb-4 mx-auto"
+  />
 )}
+
 
 
 

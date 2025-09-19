@@ -15,10 +15,10 @@ def refresh_google_token(creds: GoogleCredentials):
         },
     )
     data = resp.json()
-    if resp.status_code == 200:
+    if resp.status_code == 200:                                                     #if true Updating access_token  expiry.
         creds.access_token = data["access_token"]
         expires_in = int(data.get("expires_in", 3600))
         creds.expiry = timezone.now() + timedelta(seconds=expires_in)
-        creds.save()
+        creds.save()                                #db mei
         return True, "Token refreshed"
     return False, data.get("error_description", "Unknown error")

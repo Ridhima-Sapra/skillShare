@@ -5,21 +5,30 @@ export default function Notifications() {
   const ws = useRef(null);
 
   useEffect(() => {
+    const connectWS =()=>{
     const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
     const host = window.location.hostname;
-  const port =  "8000"; // fallback for prod
+  const port =  "8000"; // not good for prod
   ws.current = new WebSocket(`${protocol}://${host}:${port}/ws/notifications/`);
 
-
+    ws.current.onopen = () => {
+        console.log("Notifications WebSocket connected");
+      };
     ws.current.onmessage = (e) => {
-      const data = JSON.parse(e.data);
-      if (data.message) {
-        setNotifications(prev => [data.message, ...prev.slice(0, 4)]);  // keep only latest 5
+      try {
+        const data = JSON.parse(e.data);
+        if (data.message) {
+          setNotifications(prev => [data.message, ...prev.slice(0, 4)]);  // keep only latest 5
+        }
+      } catch (error) {
+        console.error("Error parsing WebSocket message:", error,e.data);
+        
       }
     };
-    ws.current.onclose = () => console.log('Notification WebSocket closed');
-    ws.current.onerror = (err) => console.error('Notification WebSocket error:', err);
-
+    ws.current.onclose = (e) => {console.log('Notification WebSocket closed'); setTimeout(connectWS, 3000);}
+    ws.current.onerror = (err) =>{ console.error('Notification WebSocket error:', err); ws.current.close();}
+   };
+    connectWS();
     return () => ws.current.close();
   }, []);
 

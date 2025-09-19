@@ -1,8 +1,9 @@
+# Django needs URL routing to connect frontend requests to backend views.
+
 from django.urls import path
 from .views import RegisterView, UserProfileView, DashboardView, SkillMatchView
-# from events.views import save_google_tokens
 urlpatterns = [
-    # GET or PATCH /api/users/<id>/
+    # GET or PATCH <id>/
     path('<int:id>/', UserProfileView.as_view(), name='user-profile'),
 
     # POST /api/register/
@@ -13,5 +14,5 @@ urlpatterns = [
 
     # GET /api/dashboard/
     path('dashboard/', DashboardView.as_view(), name='dashboard'),
-    #  path("save-google-tokens/", save_google_tokens, name="save-google-tokens"),
+    
 ]

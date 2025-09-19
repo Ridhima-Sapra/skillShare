@@ -8,12 +8,14 @@ from .serializers import UserSkillSerializer
 from .serializers import SkillSerializer
 from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth import get_user_model
-from users.pagination import StandardResultsSetPagination  # ✅ import this
+from users.pagination import StandardResultsSetPagination  
 
 
 
 User = get_user_model()
 
+
+# Lists all skills or creates a new one. Allows searching
 class SkillListCreateView(generics.ListCreateAPIView):
     queryset = Skill.objects.all()
     serializer_class = SkillSerializer
@@ -21,16 +23,20 @@ class SkillListCreateView(generics.ListCreateAPIView):
 
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_fields = ['name']
-    search_fields = ['name', 'description']  # ✅ /api/skills/?search=Python
+    search_fields = ['name', 'description']             # /api/skills/?search=Python
 
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)  # FIXED: use correct field name
+        serializer.save(user=self.request.user)  
 
+
+# CRUD for a single skill 
 class SkillDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Skill.objects.all()
     serializer_class = SkillSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+
 class SkillViewSet(viewsets.ModelViewSet):
     queryset = Skill.objects.all()
     serializer_class = SkillSerializer
@@ -45,6 +51,8 @@ class AssignSkillView(generics.CreateAPIView):
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+
+
 class UserAssignedSkillsView(generics.ListAPIView):
     serializer_class = UserSkillSerializer
     permission_classes = [permissions.IsAuthenticated]
