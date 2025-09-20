@@ -18,7 +18,7 @@ export default function IncomingRequests() {
         {incomingRequests.map((r) => (
           <li key={r.id} className="border p-2 rounded flex justify-between items-center">
             <div>
-              <div className="font-medium">{r.from_user_username || "Unknown"}</div>
+              <div className="font-medium">{r.from_user?.username || "Unknown"}</div>
               <div className="text-sm text-gray-500">Sent: {new Date(r.created_at).toLocaleString()}</div>
             </div>
             <div className="flex gap-2">

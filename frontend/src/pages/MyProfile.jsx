@@ -586,7 +586,8 @@ useEffect(() => {
               className="bg-red-500 text-white px-2 py-1 rounded"
               onClick={async () => {
                 try {
-                  await axios.post(`/users/requests/${req.id}/respond/`, { action: "reject" });
+                await axios.post(`/users/connect/respond/${req.id}/`, { action: "reject" });
+
                   setIncomingRequests(prev => prev.filter(r => r.id !== req.id));
                 } catch (err) {
                   console.error("Reject failed", err);

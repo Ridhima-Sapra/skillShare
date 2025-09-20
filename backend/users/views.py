@@ -30,6 +30,13 @@ from rest_framework.response import Response
 from rest_framework import status
 
 # Send connection request
+from rest_framework import generics, status
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from django.db.models import Q
+from .models import UserConnection
+from .serializers import UserConnectionSerializer
+
 class SendConnectionRequestView(generics.CreateAPIView):
     serializer_class = UserConnectionSerializer
     permission_classes = [IsAuthenticated]
@@ -50,7 +57,6 @@ class SendConnectionRequestView(generics.CreateAPIView):
         ).first()
 
         if existing:
-            # return existing status and id
             return Response({
                 "detail": "Connection already exists",
                 "id": existing.id,
@@ -59,11 +65,11 @@ class SendConnectionRequestView(generics.CreateAPIView):
 
         serializer = self.get_serializer(data={'to_user': to_user_id})
         serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer, from_user=request.user)
+        self.perform_create(serializer, from_user=request.user, to_user_id=to_user_id)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
-    def perform_create(self, serializer, from_user):
-        serializer.save(from_user=from_user)
 
+    def perform_create(self, serializer, from_user, to_user_id):
+        serializer.save(from_user=from_user, to_user_id=to_user_id)
 
 
 # Accept connection request

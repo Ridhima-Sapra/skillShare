@@ -21,7 +21,7 @@ class UserConnectionSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserConnection
         fields = ['id', 'to_user', 'from_user', 'status', 'created_at']
-        read_only_fields = ['from_user', 'status', 'created_at']
+        # read_only_fields = ['from_user', 'status', 'created_at']
 
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
