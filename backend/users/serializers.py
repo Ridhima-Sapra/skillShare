@@ -7,7 +7,21 @@ from rest_framework import serializers
 from .models import CustomUser  
 from skills.models import UserSkill, Skill
 from events.models import Event
+from .models import UserConnection
 
+class SimpleUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomUser
+        fields = ['id', 'username', 'photo']  # photo optional
+
+class UserConnectionSerializer(serializers.ModelSerializer):
+    from_user = SimpleUserSerializer(read_only=True)
+    to_user = SimpleUserSerializer(read_only=True)
+
+    class Meta:
+        model = UserConnection
+        fields = ['id', 'to_user', 'from_user', 'status', 'created_at']
+        read_only_fields = ['from_user', 'status', 'created_at']
 
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
@@ -52,17 +66,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
         model = CustomUser
         fields = ['id', 'username', 'email', 'bio', 'photo','skills', 'events_attending', 'events_hosted']
 
-    # def get_photo(self, obj):
-    #     request = self.context.get('request')
-    #     if obj.photo and hasattr(obj.photo, 'url'):
-    #         try:
-    #             if request:
-    #                 url= request.build_absolute_uri(obj.photo.url)
-    #             else:
-    #                 return obj.photo.url
-    #         except Exception as e:
-    #             return None
-    #     return None
+    
     def get_photo(self, obj):
         request = self.context.get("request")
         if obj.photo and hasattr(obj.photo, "url"):

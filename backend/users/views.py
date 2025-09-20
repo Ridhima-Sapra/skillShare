@@ -13,9 +13,112 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from .serializers import RegisterSerializer, UserProfileSerializer
 from django.http import JsonResponse
 from events.models import GoogleCredentials
+from rest_framework.views import APIView
+from skills.models import Skill, UserSkill
+from rest_framework.permissions import IsAuthenticated
+from rest_framework import generics, permissions
+from .serializers import UserProfileSerializer
+from django.db.models import Q
 
 User = get_user_model()
 
+from rest_framework import generics
+from rest_framework.permissions import IsAuthenticated
+from .models import UserConnection
+from .serializers import UserConnectionSerializer
+from rest_framework.response import Response
+from rest_framework import status
+
+# Send connection request
+class SendConnectionRequestView(generics.CreateAPIView):
+    serializer_class = UserConnectionSerializer
+    permission_classes = [IsAuthenticated]
+
+    def create(self, request, *args, **kwargs):
+        to_user_id = request.data.get('to_user')
+        if not to_user_id:
+            return Response({"detail": "to_user is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # block self
+        if int(to_user_id) == request.user.id:
+            return Response({"detail": "Cannot connect to yourself"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # check if any connection already exists between the two users (either direction)
+        existing = UserConnection.objects.filter(
+            Q(from_user=request.user, to_user_id=to_user_id) |
+            Q(from_user_id=to_user_id, to_user=request.user)
+        ).first()
+
+        if existing:
+            # return existing status and id
+            return Response({
+                "detail": "Connection already exists",
+                "id": existing.id,
+                "status": existing.status
+            }, status=status.HTTP_200_OK)
+
+        serializer = self.get_serializer(data={'to_user': to_user_id})
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer, from_user=request.user)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    def perform_create(self, serializer, from_user):
+        serializer.save(from_user=from_user)
+
+
+
+# Accept connection request
+class AcceptConnectionRequestView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, connection_id):
+        try:
+            conn = UserConnection.objects.get(id=connection_id, to_user=request.user)
+            conn.status = "accepted"
+            conn.save()
+            return Response({"success": True, "message": "Connection accepted"})
+        except UserConnection.DoesNotExist:
+            return Response({"success": False, "message": "Connection not found"}, status=status.HTTP_404_NOT_FOUND)
+
+class RespondConnectionRequestView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, connection_id):
+        action = request.data.get('action')
+        if action not in ('accept', 'reject'):
+            return Response({"detail": "Invalid action; use 'accept' or 'reject'."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            conn = UserConnection.objects.get(id=connection_id, to_user=request.user)
+        except UserConnection.DoesNotExist:
+            return Response({"detail": "Connection request not found or you are not the recipient."}, status=status.HTTP_404_NOT_FOUND)
+
+        if action == 'accept':
+            conn.status = 'accepted'
+            conn.save()
+            return Response({"success": True, "message": "Connection accepted", "id": conn.id})
+        else:
+            conn.status = 'rejected'
+            conn.save()
+            return Response({"success": True, "message": "Connection rejected", "id": conn.id})
+
+# List accepted connections
+class ListUserConnectionsView(generics.ListAPIView):
+    serializer_class = UserConnectionSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return UserConnection.objects.filter(
+            Q(from_user=self.request.user) | Q(to_user=self.request.user),
+            status="accepted"
+        )
+
+#incomih req
+class ListIncomingRequestsView(generics.ListAPIView):
+    serializer_class = UserConnectionSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return UserConnection.objects.filter(to_user=self.request.user, status='pending').order_by('-created_at')
 
 
 # User Registration
@@ -51,6 +154,13 @@ class UserProfileView(generics.RetrieveUpdateAPIView):
         context = super().get_serializer_context()
         context.update({"request": self.request})
         return context
+# users/views.py
+# class UserSkillCreateView(generics.CreateAPIView):
+#     serializer_class = UserSkillSerializer
+#     permission_classes = [IsAuthenticated]
+
+#     def perform_create(self, serializer):
+#         serializer.save(user=self.request.user)
 
 # Update User Skill
 
@@ -109,13 +219,70 @@ class DashboardView(APIView):
 
 
 # Skill Match
+
 class SkillMatchView(generics.ListAPIView):
     serializer_class = UserProfileSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        skill_name = self.request.query_params.get('skill')
-        if not skill_name:
+        skill_names = self.request.query_params.get("skill")
+        proficiency_filter = self.request.query_params.get("proficiency")
+        if not skill_names:
             return User.objects.none()
-        return User.objects.filter(userskill__skill__name__iexact=skill_name).distinct()
+        
+        skill_list = [s.strip() for s in skill_names.split(",")]
 
+        queryset = User.objects.filter(
+            userskill__skill__name__in=skill_list
+        ).distinct()
+
+        if proficiency_filter:
+            queryset = queryset.filter(
+                userskill__proficiency__iexact=proficiency_filter
+            ).distinct()
+
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True, context={"request": request})
+        data = serializer.data
+        current_user = request.user
+
+        # attach connection info
+        for u in data:
+            # check accepted either direction
+            accepted_conn = UserConnection.objects.filter(
+                (Q(from_user=current_user, to_user_id=u['id']) | Q(from_user_id=u['id'], to_user=current_user)),
+                status='accepted'
+            ).first()
+            if accepted_conn:
+                u['connection_status'] = 'connected'
+                u['connection_id'] = accepted_conn.id
+                continue
+
+            # check pending request sent by current user
+            sent_conn = UserConnection.objects.filter(from_user=current_user, to_user_id=u['id'], status='pending').first()
+            if sent_conn:
+                u['connection_status'] = 'pending_sent'
+                u['connection_id'] = sent_conn.id
+                continue
+
+            # check pending request received by current user (other user sent it)
+            rec_conn = UserConnection.objects.filter(from_user_id=u['id'], to_user=current_user, status='pending').first()
+            if rec_conn:
+                u['connection_status'] = 'pending_received'
+                u['connection_id'] = rec_conn.id
+                continue
+
+            u['connection_status'] = 'none'
+            u['connection_id'] = None
+
+        return Response(data)
+
+class CurrentUserView(generics.RetrieveAPIView):
+    serializer_class = UserProfileSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_object(self):
+        return self.request.user

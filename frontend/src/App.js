@@ -12,11 +12,12 @@ import Home from "./pages/Home";
 import Notifications from './components/Notifications';
 import ChatRoom from './pages/ChatRoom';
 import GoogleCallback from "./pages/GoogleCallback";
-
+import { ConnectionsProvider } from "./context/ConnectionsContext";
 
 function App() {
   return (
     <Router>
+      <ConnectionsProvider>
       <div>
         <Navbar />
          <Notifications />
@@ -35,6 +36,7 @@ function App() {
         </Routes>
 
       </div>
+         </ConnectionsProvider>
     </Router>
   );
 }

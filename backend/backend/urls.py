@@ -38,24 +38,23 @@
 from django.contrib import admin
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from skills.views import SkillViewSet
+# from skills.views import SkillViewSet
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from django.conf import settings
 from django.conf.urls.static import static
 
 # Router for ViewSets
 router = DefaultRouter()
-router.register(r'skills', SkillViewSet)
+# router.register(r'skills', SkillViewSet)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
 
     # App urls
     path('api/', include(router.urls)),
-    path('api/custom-skills/', include('skills.urls')),
     path('api/events/', include('events.urls')),
     path('api/users/', include('users.urls')),
-
+       path('api/skills/', include('skills.urls')),
     # JWT Auth
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),

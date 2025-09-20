@@ -6,7 +6,7 @@ from django.conf import settings
 class Skill(models.Model):
     name = models.CharField(max_length=100)
     description = models.TextField()
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="created_skills")
+    # user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="created_skills")
 
     def __str__(self):
         return self.name

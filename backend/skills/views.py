@@ -9,12 +9,34 @@ from .serializers import SkillSerializer
 from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth import get_user_model
 from users.pagination import StandardResultsSetPagination  
+from django.db import transaction
 
 
 
 User = get_user_model()
+from rest_framework.response import Response
+from rest_framework import status
+
+from rest_framework import generics, permissions
+from .models import Skill
+from .serializers import SkillSerializer
 
 
+class CreateSkillView(generics.CreateAPIView):
+    queryset = Skill.objects.all()
+    serializer_class = SkillSerializer
+    permission_classes = [IsAuthenticated]  # optional
+
+    @transaction.atomic 
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        skill = serializer.save()
+        return Response({
+            "id": skill.id,
+            "name": skill.name,
+            "description": skill.description,
+        }, status=status.HTTP_201_CREATED)
 # Lists all skills or creates a new one. Allows searching
 class SkillListCreateView(generics.ListCreateAPIView):
     queryset = Skill.objects.all()
@@ -27,23 +49,16 @@ class SkillListCreateView(generics.ListCreateAPIView):
 
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)  
+         serializer.save() 
 
 
 # CRUD for a single skill 
 class SkillDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Skill.objects.all()
     serializer_class = SkillSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
 
-class SkillViewSet(viewsets.ModelViewSet):
-    queryset = Skill.objects.all()
-    serializer_class = SkillSerializer
-    permission_classes = [IsAuthenticated]
-
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
 
 class AssignSkillView(generics.CreateAPIView):
     serializer_class = UserSkillSerializer
@@ -69,7 +84,7 @@ class UserAssignedSkillsView(generics.ListAPIView):
         return queryset
 
 class UpdateUserSkillProficiencyView(generics.UpdateAPIView):
-    queryset = UserSkill.objects.all()
+    # queryset = UserSkill.objects.all()
     serializer_class = UserSkillSerializer
     permission_classes = [IsAuthenticated]
 
