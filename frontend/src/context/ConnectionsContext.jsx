@@ -10,6 +10,9 @@ export const ConnectionsProvider = ({ children }) => {
   const [users, setUsers] = useState([]);
   const [incomingRequests, setIncomingRequests] = useState([]);
 
+  
+
+
   const fetchUsers = useCallback(async (skill, proficiency) => {
     try {
       const params = new URLSearchParams();
@@ -69,7 +72,6 @@ export const ConnectionsProvider = ({ children }) => {
       // update users (if the currently-loaded skillmatch list contains the user reference)
       setUsers((prev) =>
         prev.map((u) => {
-          // compare loosely; u.connection_id can be number or string
           if (u.connection_id === connectionId || String(u.connection_id) === String(connectionId)) {
             if (action === "accept") return { ...u, connection_status: "connected" };
             return { ...u, connection_status: "none", connection_id: null };

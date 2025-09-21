@@ -10,6 +10,8 @@ from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth import get_user_model
 from users.pagination import StandardResultsSetPagination  
 from django.db import transaction
+from .models import SkillResource
+from .serializers import SkillResourceSerializer
 
 
 
@@ -91,3 +93,15 @@ class UpdateUserSkillProficiencyView(generics.UpdateAPIView):
     def get_queryset(self):
         # Only allow the logged-in user to update their own skills
         return UserSkill.objects.filter(user=self.request.user)    
+    
+
+class SkillResourceListCreateView(generics.ListCreateAPIView):
+    serializer_class = SkillResourceSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def get_queryset(self):
+        skill_id = self.kwargs["skill_id"]
+        return SkillResource.objects.filter(skill_id=skill_id)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user, skill_id=self.kwargs["skill_id"])

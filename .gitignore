@@ -13,7 +13,9 @@ yarn-error.log*
 
 # =================
 # Python / Django (Backend)
-# =================
+
+
+backend/backend/settings.py
 __pycache__/
 *.py[cod]
 *.pyo

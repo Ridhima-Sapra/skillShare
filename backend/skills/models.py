@@ -22,3 +22,25 @@ class UserSkill(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.skill.name}"
+
+class SkillResource(models.Model):
+    skill = models.ForeignKey(
+        Skill, 
+        on_delete=models.CASCADE, 
+        related_name="resources"
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, 
+        on_delete=models.CASCADE, 
+        related_name="resources_added"
+    )
+    title = models.CharField(max_length=255)
+    url = models.URLField()
+    description = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.skill.name} - {self.title} by {self.user.username}"
